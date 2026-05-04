@@ -22,7 +22,7 @@ body {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .header h1 {
@@ -39,12 +39,45 @@ body {
   color: #777;
 }
 
+.tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 14px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 6px 0;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: #666;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab-btn:hover {
+  color: #999;
+}
+
+.tab-btn.tab-active {
+  color: #7c5cfc;
+  border-bottom-color: #7c5cfc;
+}
+
+.tab-content {
+  min-height: 60px;
+}
+
 .page-stats {
   text-align: center;
   font-size: 11px;
   color: #4ade80;
   margin-bottom: 10px;
-  margin-top: -8px;
+  margin-top: -4px;
 }
 
 .add-section {
@@ -107,7 +140,7 @@ body {
 
 .list-section {
   margin-bottom: 14px;
-  max-height: 320px;
+  max-height: 280px;
   overflow-y: auto;
   min-height: 60px;
 }
@@ -260,6 +293,11 @@ body {
 .remove-btn:hover {
   color: #f87171;
   border-color: #f87171;
+}
+
+.keyword-item .channel-info .channel-name {
+  text-transform: none;
+  color: #c4b5fd;
 }
 
 .footer {

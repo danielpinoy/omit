@@ -1,8 +1,21 @@
 chrome.runtime.onInstalled.addListener(function () {
-  chrome.storage.sync.get(['blockedChannels'], function (result) {
-    if (!result.blockedChannels) {
-      chrome.storage.sync.set({ blockedChannels: [] });
-    }
+  chrome.storage.local.get(['blockedChannels', 'blockedKeywords'], function (result) {
+    if (result.blockedChannels || result.blockedKeywords) return;
+
+    chrome.storage.sync.get(['blockedChannels', 'blockedKeywords'], function (syncData) {
+      var updates = {};
+      if (syncData.blockedChannels && syncData.blockedChannels.length) {
+        updates.blockedChannels = syncData.blockedChannels;
+      }
+      if (syncData.blockedKeywords && syncData.blockedKeywords.length) {
+        updates.blockedKeywords = syncData.blockedKeywords;
+      }
+      if (Object.keys(updates).length) {
+        chrome.storage.local.set(updates);
+      } else {
+        chrome.storage.local.set({ blockedChannels: [], blockedKeywords: [] });
+      }
+    });
   });
 
   chrome.contextMenus.removeAll(function () {
@@ -32,11 +45,11 @@ chrome.contextMenus.onClicked.addListener(function (info, tab) {
   if (!match) return;
   var id = match[1];
 
-  chrome.storage.sync.get(['blockedChannels'], function (result) {
+  chrome.storage.local.get(['blockedChannels'], function (result) {
     var channels = result.blockedChannels || [];
     if (channels.some(function (c) { return c.id === id; })) return;
     channels.push({ id: id, name: id });
-    chrome.storage.sync.set({ blockedChannels: channels });
+    chrome.storage.local.set({ blockedChannels: channels });
   });
 });
 
@@ -48,16 +61,4 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   }
 });
 
-chrome.storage.onChanged.addListener(function (changes, area) {
-  if (area === 'sync' && changes.blockedChannels) {
-    var channels = changes.blockedChannels.newValue || [];
-    chrome.tabs.query({ url: '*://*.youtube.com/*' }, function (tabs) {
-      tabs.forEach(function (tab) {
-        chrome.tabs.sendMessage(tab.id, {
-          type: 'BLOCKLIST_UPDATED',
-          channels: channels
-        }).catch(function () {});
-      });
-    });
-  }
-});
+console.log("[Omit] Extension installed");

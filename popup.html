@@ -13,34 +13,64 @@
       <span class="block-count" id="block-count">0 blocked</span>
     </div>
 
-    <div id="page-stats" class="page-stats" style="display:none"></div>
-
-    <div class="add-section">
-      <input
-        type="text"
-        id="channel-input"
-        class="add-input"
-        placeholder="Paste channel URL or handle..."
-        autocomplete="off"
-      >
-      <button id="block-btn" class="add-btn">Block</button>
-      <div id="add-error" class="add-error"></div>
+    <div class="tabs">
+      <button class="tab-btn tab-active" id="tab-channels">Channels</button>
+      <button class="tab-btn" id="tab-keywords">Keywords</button>
     </div>
 
-    <div class="list-section">
-      <div class="loading-state" id="loading-state">
-        <div class="spinner"></div>
+    <div id="page-stats" class="page-stats" style="display:none"></div>
+
+    <div id="tab-channels-content" class="tab-content">
+      <div class="add-section">
+        <input
+          type="text"
+          id="channel-input"
+          class="add-input"
+          placeholder="Paste channel URL or handle..."
+          autocomplete="off"
+        >
+        <button id="block-btn" class="add-btn">Block</button>
+        <div id="add-error" class="add-error"></div>
       </div>
-      <div class="error-state" id="error-state" style="display:none">
-        <p>Failed to load blocklist</p>
-        <button id="retry-btn" class="retry-btn">Retry</button>
+
+      <div class="list-section">
+        <div class="loading-state" id="loading-state">
+          <div class="spinner"></div>
+        </div>
+        <div class="error-state" id="error-state" style="display:none">
+          <p>Failed to load blocklist</p>
+          <button id="retry-btn" class="retry-btn">Retry</button>
+        </div>
+        <div id="empty-state" class="empty-state" style="display:none">
+          <p class="empty-icon">&#x26D4;</p>
+          <p>No channels blocked yet</p>
+          <p class="empty-hint">Hover a channel name on YouTube and click <strong>Block</strong></p>
+        </div>
+        <ul id="channel-list" class="channel-list" style="display:none"></ul>
       </div>
-      <div id="empty-state" class="empty-state" style="display:none">
-        <p class="empty-icon">&#x26D4;</p>
-        <p>No channels blocked yet</p>
-        <p class="empty-hint">Hover a channel name on YouTube and click <strong>Block</strong></p>
+    </div>
+
+    <div id="tab-keywords-content" class="tab-content" style="display:none">
+      <div class="add-section">
+        <input
+          type="text"
+          id="keyword-input"
+          class="add-input"
+          placeholder="Enter a keyword to block..."
+          autocomplete="off"
+        >
+        <button id="keyword-btn" class="add-btn">Block</button>
+        <div id="keyword-error" class="add-error"></div>
       </div>
-      <ul id="channel-list" class="channel-list" style="display:none"></ul>
+
+      <div class="list-section">
+        <div id="keyword-empty-state" class="empty-state">
+          <p class="empty-icon">&#x26D4;</p>
+          <p>No keywords blocked yet</p>
+          <p class="empty-hint">Videos with matching titles will be hidden</p>
+        </div>
+        <ul id="keyword-list" class="channel-list" style="display:none"></ul>
+      </div>
     </div>
 
     <div class="footer">

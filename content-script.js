@@ -9,7 +9,6 @@
     "ytd-grid-video-renderer:not([omit-blocked])",
   ].join(",");
 
-  var OBSERVER_TARGETS = [];
   var VIDEO_TAGS = {
     "ytd-rich-item-renderer": true,
     "ytd-video-renderer": true,
@@ -20,8 +19,44 @@
 
   var blockedIds = new Set();
   var blockedNames = new Set();
+  var blockedKeywords = [];
+  var channelNameMap = {};
   var overlayShown = false;
   var toastTimer = null;
+
+  var CHANNEL_RE = /\/(@[^/?]+|channel\/[^/?]+|c\/[^/?]+)/;
+
+  function extractTitle(el) {
+    var t = el.querySelector("a#video-title, a[title]");
+    if (!t) {
+      var all = el.querySelectorAll("a");
+      for (var i = 0; i < all.length; i++) {
+        var h = all[i].getAttribute("href") || "";
+        if (h.indexOf("/watch?v=") !== -1 || h.indexOf("/shorts/") !== -1) {
+          t = all[i];
+          break;
+        }
+      }
+    }
+    if (!t) return "";
+    return (t.getAttribute("title") || t.textContent || "").trim().toLowerCase();
+  }
+
+  function matchesKeyword(title) {
+    if (!title || !blockedKeywords.length) return false;
+    for (var i = 0; i < blockedKeywords.length; i++) {
+      if (blockedKeywords[i] && title.indexOf(blockedKeywords[i]) !== -1) return true;
+    }
+    return false;
+  }
+
+  function shouldHide(el) {
+    var info = extractChannelInfo(el);
+    if (info && isBlocked(info.id, info.name)) return true;
+    var title = extractTitle(el);
+    if (matchesKeyword(title)) return true;
+    return false;
+  }
 
   function extractChannelInfo(el) {
     var nameWrap = el.querySelector("ytd-channel-name");
@@ -29,16 +64,16 @@
     var link = nameWrap.querySelector("a");
     if (!link) return null;
     var href = link.getAttribute("href") || "";
-    var match = href.match(/\/(@[^/?]+|channel\/[^/?]+|c\/[^/?]+)/);
-    if (!match) return null;
-    return {
-      id: match[1],
-      name: (link.textContent || "").trim(),
-    };
-  }
+        var match = href.match(CHANNEL_RE);
+        if (!match) return null;
+        return {
+          id: match[1],
+          name: (link.textContent || "").trim(),
+        };
+      }
 
-  function parseChannelFromUrl(url) {
-    var match = url.match(/\/(@[^/?]+|channel\/[^/?]+|c\/[^/?]+)/);
+      function parseChannelFromUrl(url) {
+        var match = url.match(CHANNEL_RE);
     return match ? match[1] : null;
   }
 
@@ -76,8 +111,7 @@
     var elements = document.querySelectorAll(VIDEO_SELECTORS);
     elements.forEach(function (el) {
       try {
-        var info = extractChannelInfo(el);
-        if (info && isBlocked(info.id, info.name)) {
+        if (shouldHide(el)) {
           hideVideo(el);
         }
       } catch (e) {
@@ -94,14 +128,21 @@
     style.textContent = [
       ".omit-block-btn {",
       '  margin-left:6px;padding:1px 7px;font-size:11px;font-family:"Roboto","Arial",sans-serif;',
-      "  font-weight:500;color:#fff;background:rgba(255,255,255,0.15);border:none;border-radius:3px;",
+      "  font-weight:500;border:none;border-radius:3px;",
       "  cursor:pointer;opacity:0;transition:opacity 0.15s,background 0.15s;white-space:nowrap;",
       "  vertical-align:middle;line-height:16px;",
+      "  color:#fff;background:rgba(255,255,255,0.15);",
       "}",
-      ".omit-block-btn:hover{background:#7c5cfc;}",
+      "html:not([dark]) .omit-block-btn{",
+      "  color:#333;background:rgba(0,0,0,0.08);",
+      "}",
+      ".omit-block-btn:hover{background:#7c5cfc;color:#fff;}",
+      "html:not([dark]) .omit-block-btn:hover{background:#065fd4;color:#fff;}",
       "ytd-channel-name:hover .omit-block-btn,.omit-block-btn.omit-blocked{opacity:1;}",
       ".omit-block-btn.omit-blocked{background:rgba(255,255,255,0.06);color:#999;cursor:default;}",
+      "html:not([dark]) .omit-block-btn.omit-blocked{background:rgba(0,0,0,0.04);color:#999;}",
       ".omit-block-btn.omit-blocked:hover{background:rgba(255,255,255,0.06);}",
+      "html:not([dark]) .omit-block-btn.omit-blocked:hover{background:rgba(0,0,0,0.04);}",
 
       ".omit-overlay{",
       "  position:fixed;inset:0;z-index:99998;background:rgba(5,5,15,0.94);",
@@ -155,7 +196,7 @@
     var link = nameEl.querySelector("a");
     if (!link) return;
     var href = link.getAttribute("href") || "";
-    var match = href.match(/\/(@[^/?]+|channel\/[^/?]+|c\/[^/?]+)/);
+    var match = href.match(CHANNEL_RE);
     if (!match) return;
     var channelId = match[1];
     var channelName = (link.textContent || "").trim();
@@ -244,11 +285,11 @@
 
   async function undoBlock(id) {
     try {
-      var result = await chrome.storage.sync.get(["blockedChannels"]);
+      var result = await chrome.storage.local.get(["blockedChannels"]);
       var channels = (result.blockedChannels || []).filter(function (c) {
         return c.id !== id;
       });
-      await chrome.storage.sync.set({ blockedChannels: channels });
+      await chrome.storage.local.set({ blockedChannels: channels });
     } catch (err) {
       if (
         err &&
@@ -262,7 +303,7 @@
 
   async function blockChannel(id, name, btnElement) {
     try {
-      var result = await chrome.storage.sync.get(["blockedChannels"]);
+      var result = await chrome.storage.local.get(["blockedChannels"]);
       var channels = result.blockedChannels || [];
       if (
         channels.some(function (c) {
@@ -271,7 +312,7 @@
       )
         return;
       channels.push({ id: id, name: name });
-      await chrome.storage.sync.set({ blockedChannels: channels });
+      await chrome.storage.local.set({ blockedChannels: channels });
       if (btnElement) {
         btnElement.textContent = "Blocked";
         btnElement.className = "omit-block-btn omit-blocked";
@@ -313,7 +354,7 @@
     if (existing) existing.remove();
 
     var currentChannelId = parseChannelFromUrl(location.pathname);
-    var channelName = currentChannelId || "this channel";
+    var channelName = channelNameMap[currentChannelId] || currentChannelId || "this channel";
 
     var overlay = document.createElement("div");
     overlay.className = "omit-overlay";
@@ -325,7 +366,7 @@
       "</div>" +
       '<div class="omit-overlay-actions">' +
       '<button class="omit-overlay-btn omit-overlay-btn-primary" id="omit-view-anyway">View Anyway</button>' +
-      '<button class="omit-overlay-btn omit-overlay-btn-secondary" id="omit-manage">Manage in Omit</button>' +
+      '<button class="omit-overlay-btn omit-overlay-btn-secondary" id="omit-go-back">Go Back</button>' +
       "</div>";
     document.body.appendChild(overlay);
 
@@ -340,12 +381,9 @@
       });
 
     overlay
-      .querySelector("#omit-manage")
+      .querySelector("#omit-go-back")
       .addEventListener("click", function () {
-        try {
-          chrome.runtime.sendMessage({ type: "OPEN_POPUP" });
-        } catch (e) {}
-        hideOverlay();
+        history.back();
       });
   }
 
@@ -392,12 +430,17 @@
         return c.name.toLowerCase();
       }),
     );
+    channelNameMap = {};
+    channels.forEach(function (c) {
+      channelNameMap[c.id] = c.name;
+    });
   }
 
   async function loadBlocklist() {
     try {
-      var result = await chrome.storage.sync.get(["blockedChannels"]);
+      var result = await chrome.storage.local.get(["blockedChannels", "blockedKeywords"]);
       var channels = result.blockedChannels || [];
+      blockedKeywords = result.blockedKeywords || [];
       loadSets(channels);
       scanVideos(true);
       fullRefresh();
@@ -415,8 +458,7 @@
 
     if (VIDEO_TAGS[tag]) {
       try {
-        var info = extractChannelInfo(node);
-        if (info && isBlocked(info.id, info.name)) {
+        if (shouldHide(node)) {
           hideVideo(node);
         }
       } catch (e) {}
@@ -426,8 +468,7 @@
       var els = node.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ytd-reel-item-renderer, ytd-grid-video-renderer');
       for (var k = 0; k < els.length; k++) {
         try {
-          var ci = extractChannelInfo(els[k]);
-          if (ci && isBlocked(ci.id, ci.name)) {
+          if (shouldHide(els[k])) {
             hideVideo(els[k]);
           }
         } catch (e) {}
@@ -462,25 +503,21 @@
   }
 
   chrome.storage.onChanged.addListener(function (changes, area) {
-    if (area === "sync" && changes.blockedChannels) {
+    if (area !== "local") return;
+    var needsScan = false;
+    if (changes.blockedChannels) {
       var channels = changes.blockedChannels.newValue || [];
       loadSets(channels);
-      scanVideos(true);
       fullRefresh();
-      checkChannelPage();
+      needsScan = true;
     }
-  });
-
-  chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
-    if (msg.type === "BLOCKLIST_UPDATED") {
-      loadSets(msg.channels || []);
+    if (changes.blockedKeywords) {
+      blockedKeywords = changes.blockedKeywords.newValue || [];
+      needsScan = true;
+    }
+    if (needsScan) {
       scanVideos(true);
-      fullRefresh();
       checkChannelPage();
-    }
-    if (msg.type === "GET_STATS") {
-      var hidden = document.querySelectorAll("[omit-blocked]").length;
-      sendResponse({ count: hidden });
     }
   });
 
@@ -503,6 +540,7 @@
       lastUrl = currentUrl;
       scanVideos(true);
       injectBlockButtons();
+      overlayShown = false;
       checkChannelPage();
     }
   }).observe(document.querySelector("title") || document.documentElement, {

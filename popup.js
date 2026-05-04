@@ -4,7 +4,7 @@
   var listEl = document.getElementById('channel-list');
   var emptyEl = document.getElementById('empty-state');
   var loadingEl = document.getElementById('loading-state');
-  var errorEl2 = document.getElementById('error-state');
+  var storageErrEl = document.getElementById('error-state');
   var countEl = document.getElementById('block-count');
   var inputEl = document.getElementById('channel-input');
   var blockBtn = document.getElementById('block-btn');
@@ -20,7 +20,19 @@
   var retryBtn = document.getElementById('retry-btn');
   var pageStatsEl = document.getElementById('page-stats');
 
+  var tabChannels = document.getElementById('tab-channels');
+  var tabKeywords = document.getElementById('tab-keywords');
+  var tabChannelsContent = document.getElementById('tab-channels-content');
+  var tabKeywordsContent = document.getElementById('tab-keywords-content');
+
+  var keywordInputEl = document.getElementById('keyword-input');
+  var keywordBtn = document.getElementById('keyword-btn');
+  var keywordErrEl = document.getElementById('keyword-error');
+  var keywordListEl = document.getElementById('keyword-list');
+  var keywordEmptyEl = document.getElementById('keyword-empty-state');
+
   var cachedChannels = [];
+  var cachedKeywords = [];
 
   function escapeHtml(str) {
     var div = document.createElement('div');
@@ -28,16 +40,23 @@
     return div.innerHTML;
   }
 
+  function activateTab(tab) {
+    tabChannels.classList.toggle('tab-active', tab === 'channels');
+    tabKeywords.classList.toggle('tab-active', tab === 'keywords');
+    tabChannelsContent.style.display = tab === 'channels' ? '' : 'none';
+    tabKeywordsContent.style.display = tab === 'keywords' ? '' : 'none';
+  }
+
   function showLoading() {
     loadingEl.style.display = '';
-    errorEl2.style.display = 'none';
+    storageErrEl.style.display = 'none';
     emptyEl.style.display = 'none';
     listEl.style.display = 'none';
   }
 
   function showState(channels) {
     loadingEl.style.display = 'none';
-    errorEl2.style.display = 'none';
+    storageErrEl.style.display = 'none';
     if (!channels || channels.length === 0) {
       emptyEl.style.display = '';
       listEl.style.display = 'none';
@@ -53,10 +72,10 @@
     loadingEl.style.display = 'none';
     emptyEl.style.display = 'none';
     listEl.style.display = 'none';
-    errorEl2.style.display = '';
+    storageErrEl.style.display = '';
   }
 
-  function renderList(channels) {
+  function renderChannelList(channels) {
     listEl.innerHTML = '';
     showState(channels);
     if (!channels || channels.length === 0) return;
@@ -75,12 +94,43 @@
     });
   }
 
+  function renderKeywordList(keywords) {
+    keywordListEl.innerHTML = '';
+    if (!keywords || keywords.length === 0) {
+      keywordEmptyEl.style.display = '';
+      keywordListEl.style.display = 'none';
+      return;
+    }
+    keywordEmptyEl.style.display = 'none';
+    keywordListEl.style.display = '';
+
+    keywords.forEach(function (kw) {
+      var li = document.createElement('li');
+      li.className = 'channel-item keyword-item';
+      li.innerHTML =
+        '<div class="channel-info">' +
+          '<span class="channel-name">' + escapeHtml(kw) + '</span>' +
+        '</div>' +
+        '<button class="remove-btn" title="Remove keyword">&times;</button>';
+      li.querySelector('.remove-btn').setAttribute('data-keyword', kw);
+      keywordListEl.appendChild(li);
+    });
+  }
+
+  function updateCount() {
+    var total = (cachedChannels.length + cachedKeywords.length);
+    countEl.textContent = total + ' blocked';
+  }
+
   async function loadAndRender() {
     showLoading();
     try {
-      var result = await chrome.storage.sync.get(['blockedChannels']);
+      var result = await chrome.storage.local.get(['blockedChannels', 'blockedKeywords']);
       cachedChannels = result.blockedChannels || [];
-      renderList(cachedChannels);
+      cachedKeywords = result.blockedKeywords || [];
+      renderChannelList(cachedChannels);
+      renderKeywordList(cachedKeywords);
+      updateCount();
       loadStats();
     } catch (err) {
       showError();
@@ -122,17 +172,18 @@
     }
     addErrEl.textContent = '';
     try {
-      var result = await chrome.storage.sync.get(['blockedChannels']);
+      var result = await chrome.storage.local.get(['blockedChannels']);
       var channels = result.blockedChannels || [];
       if (channels.some(function (c) { return c.id === parsed.id; })) {
         addErrEl.textContent = 'Channel already blocked';
         return;
       }
       channels.push(parsed);
-      await chrome.storage.sync.set({ blockedChannels: channels });
+      await chrome.storage.local.set({ blockedChannels: channels });
       inputEl.value = '';
       cachedChannels = channels;
-      renderList(channels);
+      renderChannelList(channels);
+      updateCount();
     } catch (err) {
       addErrEl.textContent = 'Something went wrong';
       console.error('[Omit] Add error:', err);
@@ -141,18 +192,62 @@
 
   async function removeChannel(id) {
     try {
-      var result = await chrome.storage.sync.get(['blockedChannels']);
+      var result = await chrome.storage.local.get(['blockedChannels']);
       var channels = (result.blockedChannels || []).filter(function (c) { return c.id !== id; });
-      await chrome.storage.sync.set({ blockedChannels: channels });
+      await chrome.storage.local.set({ blockedChannels: channels });
       cachedChannels = channels;
-      renderList(channels);
+      renderChannelList(channels);
+      updateCount();
     } catch (err) {
       console.error('[Omit] Remove error:', err);
     }
   }
 
+  async function addKeyword() {
+    var kw = keywordInputEl.value.trim().toLowerCase();
+    if (!kw) {
+      keywordErrEl.textContent = 'Enter a keyword';
+      return;
+    }
+    keywordErrEl.textContent = '';
+    try {
+      var result = await chrome.storage.local.get(['blockedKeywords']);
+      var keywords = result.blockedKeywords || [];
+      if (keywords.indexOf(kw) !== -1) {
+        keywordErrEl.textContent = 'Keyword already blocked';
+        return;
+      }
+      keywords.push(kw);
+      await chrome.storage.local.set({ blockedKeywords: keywords });
+      keywordInputEl.value = '';
+      cachedKeywords = keywords;
+      renderKeywordList(keywords);
+      updateCount();
+    } catch (err) {
+      keywordErrEl.textContent = 'Something went wrong';
+      console.error('[Omit] Keyword add error:', err);
+    }
+  }
+
+  async function removeKeyword(kw) {
+    try {
+      var result = await chrome.storage.local.get(['blockedKeywords']);
+      var keywords = (result.blockedKeywords || []).filter(function (k) { return k !== kw; });
+      await chrome.storage.local.set({ blockedKeywords: keywords });
+      cachedKeywords = keywords;
+      renderKeywordList(keywords);
+      updateCount();
+    } catch (err) {
+      console.error('[Omit] Keyword remove error:', err);
+    }
+  }
+
   function exportBlocklist() {
-    var json = JSON.stringify(cachedChannels, null, 2);
+    var data = {
+      channels: cachedChannels,
+      keywords: cachedKeywords
+    };
+    var json = JSON.stringify(data, null, 2);
     navigator.clipboard.writeText(json).then(function () {
       exportBtn.textContent = 'Copied!';
       exportBtn.classList.add('copied');
@@ -191,21 +286,56 @@
       importErrEl.textContent = 'Invalid JSON';
       return;
     }
-    if (!Array.isArray(parsed)) {
-      importErrEl.textContent = 'Expected a JSON array of channels';
+
+    var channels = [];
+    var keywords = [];
+
+    if (Array.isArray(parsed)) {
+      var valid = parsed.every(function (item) {
+        return item && typeof item.id === 'string' && typeof item.name === 'string';
+      });
+      if (!valid) {
+        importErrEl.textContent = 'Each channel must have "id" and "name" strings';
+        return;
+      }
+      channels = parsed;
+    } else if (parsed && typeof parsed === 'object') {
+      if (parsed.channels) {
+        if (!Array.isArray(parsed.channels)) {
+          importErrEl.textContent = '"channels" must be an array';
+          return;
+        }
+        var channelsValid = parsed.channels.every(function (item) {
+          return item && typeof item.id === 'string' && typeof item.name === 'string';
+        });
+        if (!channelsValid) {
+          importErrEl.textContent = 'Each channel must have "id" and "name" strings';
+          return;
+        }
+        channels = parsed.channels;
+      }
+      if (parsed.keywords) {
+        if (!Array.isArray(parsed.keywords)) {
+          importErrEl.textContent = '"keywords" must be an array';
+          return;
+        }
+        keywords = parsed.keywords.filter(function (k) { return typeof k === 'string'; });
+      }
+    } else {
+      importErrEl.textContent = 'Expected a JSON object or array of channels';
       return;
     }
-    var valid = parsed.every(function (item) {
-      return item && typeof item.id === 'string' && typeof item.name === 'string';
-    });
-    if (!valid) {
-      importErrEl.textContent = 'Each item must have "id" and "name" strings';
-      return;
-    }
+
     try {
-      await chrome.storage.sync.set({ blockedChannels: parsed });
-      cachedChannels = parsed;
-      renderList(parsed);
+      await chrome.storage.local.set({
+        blockedChannels: channels,
+        blockedKeywords: keywords
+      });
+      cachedChannels = channels;
+      cachedKeywords = keywords;
+      renderChannelList(channels);
+      renderKeywordList(keywords);
+      updateCount();
       hideImport();
     } catch (err) {
       importErrEl.textContent = 'Failed to save blocklist';
@@ -216,6 +346,9 @@
   document.addEventListener('DOMContentLoaded', function () {
     loadAndRender();
   });
+
+  tabChannels.addEventListener('click', function () { activateTab('channels'); });
+  tabKeywords.addEventListener('click', function () { activateTab('keywords'); });
 
   blockBtn.addEventListener('click', addChannel);
 
@@ -236,12 +369,28 @@
     removeChannel(btn.dataset.id);
   });
 
+  keywordBtn.addEventListener('click', addKeyword);
+
+  keywordInputEl.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addKeyword();
+    }
+  });
+
+  keywordInputEl.addEventListener('input', function () {
+    keywordErrEl.textContent = '';
+  });
+
+  keywordListEl.addEventListener('click', function (e) {
+    var btn = e.target.closest('.remove-btn');
+    if (!btn) return;
+    removeKeyword(btn.dataset.keyword);
+  });
+
   exportBtn.addEventListener('click', exportBlocklist);
-
   importBtn.addEventListener('click', showImport);
-
   importLoadBtn.addEventListener('click', loadImport);
-
   importCancelBtn.addEventListener('click', hideImport);
 
   if (retryBtn) {
@@ -249,13 +398,22 @@
   }
 
   chrome.storage.onChanged.addListener(function (changes, area) {
-    if (area === 'sync' && changes.blockedChannels) {
+    if (area !== 'local') return;
+    var updated = false;
+    if (changes.blockedChannels) {
       cachedChannels = changes.blockedChannels.newValue || [];
-      renderList(cachedChannels);
+      renderChannelList(cachedChannels);
+      updated = true;
     }
+    if (changes.blockedKeywords) {
+      cachedKeywords = changes.blockedKeywords.newValue || [];
+      renderKeywordList(cachedKeywords);
+      updated = true;
+    }
+    if (updated) updateCount();
   });
 
-  if (chrome.storage.sync) {
-    badgeEl.textContent = 'Synced';
+  if (chrome.storage.local) {
+    badgeEl.textContent = 'Local';
   }
 })();
