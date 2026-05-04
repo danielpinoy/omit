@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Omit</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup">
+    <div class="header">
+      <h1>Omit</h1>
+      <span class="block-count" id="block-count">0 blocked</span>
+    </div>
+
+    <div class="add-section">
+      <input
+        type="text"
+        id="channel-input"
+        class="add-input"
+        placeholder="Paste channel URL or handle..."
+        autocomplete="off"
+      >
+      <button id="block-btn" class="add-btn">Block</button>
+      <div id="add-error" class="add-error"></div>
+    </div>
+
+    <div class="list-section">
+      <div class="loading-state" id="loading-state">
+        <div class="spinner"></div>
+      </div>
+      <div class="error-state" id="error-state" style="display:none">
+        <p>Failed to load blocklist</p>
+        <button id="retry-btn" class="retry-btn">Retry</button>
+      </div>
+      <div id="empty-state" class="empty-state" style="display:none">
+        <p class="empty-icon">&#x26D4;</p>
+        <p>No channels blocked yet</p>
+        <p class="empty-hint">Hover a channel name on YouTube and click <strong>Block</strong></p>
+      </div>
+      <ul id="channel-list" class="channel-list" style="display:none"></ul>
+    </div>
+
+    <div class="footer">
+      <div class="footer-row">
+        <button id="export-btn" class="footer-btn" title="Copy blocklist as JSON">Export</button>
+        <button id="import-btn" class="footer-btn" title="Load blocklist from JSON">Import</button>
+        <span class="sync-badge" id="sync-badge">Synced</span>
+      </div>
+      <div id="import-area" class="import-area" style="display:none">
+        <textarea id="import-textarea" class="import-textarea" placeholder="Paste JSON blocklist here..."></textarea>
+        <div class="import-actions">
+          <button id="import-load-btn" class="import-action-btn import-load-btn">Load</button>
+          <button id="import-cancel-btn" class="import-action-btn import-cancel-btn">Cancel</button>
+        </div>
+        <div id="import-error" class="add-error"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
