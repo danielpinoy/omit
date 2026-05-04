@@ -60,10 +60,10 @@ body {
   /* border-bottom: 2px solid transparent; */
   background: none;
   color: #666;
-  border-radius: 6px; /* add this */
+  border-radius: 6px;
   transition:
     color 0.15s,
-    background 0.15s; /* add background to transition */
+    background 0.15s;
 }
 
 .tab-btn:hover {
@@ -72,7 +72,7 @@ body {
 
 .tab-btn.tab-active {
   color: #7c5cfc;
-  background: rgba(124, 92, 252, 0.1); /* add this */
+  background: rgba(124, 92, 252, 0.1);
 }
 
 .tab-content {
