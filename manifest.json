@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Omit",
   "version": "1.0.0",
-  "description": "Block YouTube channels from appearing in your feed",
+  "description": "Block YouTube channels and keywords from appearing in your feed",
   "permissions": ["storage", "contextMenus"],
   "host_permissions": ["*://*.youtube.com/*"],
   "content_scripts": [

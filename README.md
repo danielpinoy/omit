@@ -9,7 +9,6 @@ Block YouTube channels and keywords from appearing in your feed.
 - **Right-click to block** — Right-click any YouTube channel link anywhere → "Block channel with Omit"
 - **Channel page overlay** — Visiting a blocked channel's page shows an overlay with "View Anyway" and "Go Back"
 - **Undo toast** — Accidental block? Click `[Undo]` within 4 seconds
-- **Badge counter** — Extension icon shows how many videos are hidden on the current page
 - **Local storage** — Blocklist stored locally on your device; no account required
 - **Export/Import** — Backup or share your blocklist as JSON
 - **Zero data collection** — No analytics, no tracking, no network requests
