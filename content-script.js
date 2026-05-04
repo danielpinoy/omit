@@ -101,7 +101,6 @@
     var hidden = document.querySelectorAll("[omit-blocked]").length;
     try {
       chrome.runtime.sendMessage({ type: "SET_BADGE", count: hidden });
-      chrome.storage.local.set({ pageHiddenCount: hidden });
     } catch (e) {
       /* background may be inactive */
     }
@@ -352,7 +351,6 @@
   }
 
   function showOverlay() {
-    if (overlayShown) return;
     overlayShown = true;
     var existing = document.querySelector(".omit-overlay");
     if (existing) existing.remove();
@@ -408,12 +406,12 @@
   function checkChannelPage() {
     var channelId = parseChannelFromUrl(location.pathname);
     if (!channelId) {
-      if (overlayShown) hideOverlay();
+      hideOverlay();
       return;
     }
     if (isBlocked(channelId, null)) {
       showOverlay();
-    } else if (overlayShown) {
+    } else {
       hideOverlay();
     }
   }
@@ -544,7 +542,6 @@
       lastUrl = currentUrl;
       scanVideos(true);
       injectBlockButtons();
-      overlayShown = false;
       checkChannelPage();
     }
   }).observe(document.querySelector("title") || document.documentElement, {

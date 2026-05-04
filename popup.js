@@ -18,7 +18,6 @@
   var importCancelBtn = document.getElementById('import-cancel-btn');
   var importErrEl = document.getElementById('import-error');
   var retryBtn = document.getElementById('retry-btn');
-  var pageStatsEl = document.getElementById('page-stats');
 
   var tabChannels = document.getElementById('tab-channels');
   var tabKeywords = document.getElementById('tab-keywords');
@@ -131,22 +130,9 @@
       renderChannelList(cachedChannels);
       renderKeywordList(cachedKeywords);
       updateCount();
-      loadStats();
     } catch (err) {
       showError();
       console.error('[Omit] Popup load error:', err);
-    }
-  }
-
-  async function loadStats() {
-    try {
-      var data = await chrome.storage.local.get(['pageHiddenCount']);
-      if (data.pageHiddenCount > 0) {
-        pageStatsEl.textContent = data.pageHiddenCount + ' videos hidden on this page';
-        pageStatsEl.style.display = '';
-      }
-    } catch (e) {
-      pageStatsEl.style.display = 'none';
     }
   }
 
