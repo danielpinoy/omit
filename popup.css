@@ -57,12 +57,13 @@ body {
   font-family: inherit;
   cursor: pointer;
   border: none;
-  border-bottom: 2px solid transparent;
+  /* border-bottom: 2px solid transparent; */
   background: none;
   color: #666;
+  border-radius: 6px; /* add this */
   transition:
     color 0.15s,
-    border-color 0.15s;
+    background 0.15s; /* add background to transition */
 }
 
 .tab-btn:hover {
@@ -71,7 +72,7 @@ body {
 
 .tab-btn.tab-active {
   color: #7c5cfc;
-  border-bottom-color: #7c5cfc;
+  background: rgba(124, 92, 252, 0.1); /* add this */
 }
 
 .tab-content {
