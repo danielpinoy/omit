@@ -4,18 +4,19 @@
 
 ## Data Collection
 
-Omit stores the following data locally on your device using Chrome's Sync Storage:
+Omit stores the following data locally on your device using Chrome's Local Storage:
 
 - YouTube channel IDs (e.g., `@MrBeast`, `channel/UCX6OQ3DkcsbYNE6H8uQQuVA`)
 - YouTube channel display names
+- Blocked keywords (lowercase text strings)
 
-This data represents your channel blocklist — channels you have chosen to hide from your YouTube feed.
+This data represents your channel and keyword blocklists — content you have chosen to hide from your YouTube feed.
 
 ## Data Usage
 
-- The blocklist is used **exclusively** to hide videos from blocked channels on YouTube pages.
-- If Chrome Sync is enabled, the blocklist syncs across your signed-in Chrome devices.
-- The blocklist is accessible only to the Omit extension.
+- The blocklists are used **exclusively** to hide videos from blocked channels or with matching keywords on YouTube pages.
+- Data is stored locally and does **not** sync across devices.
+- The blocklists are accessible only to the Omit extension.
 
 ## Data Sharing
 
@@ -31,11 +32,11 @@ All processing happens locally within the extension running in your browser.
 
 ## Data Retention
 
-Your blocklist persists until you:
+Your blocklists persist until you:
 
-- Remove channels individually via the extension popup
+- Remove channels or keywords individually via the extension popup
 - Uninstall the extension
-- Clear Chrome Sync data
+- Clear Chrome extension local storage
 
 ## Contact
 
