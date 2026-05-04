@@ -20,6 +20,8 @@
   var blockedIds = new Set();
   var blockedNames = new Set();
   var blockedKeywords = [];
+  var blockedKeywordRegexes = [];
+  var hiddenCount = 0;
   var channelNameMap = {};
   var overlayShown = false;
   var toastTimer = null;
@@ -42,14 +44,22 @@
     return (t.getAttribute("title") || t.textContent || "").trim().toLowerCase();
   }
 
-  function matchesKeyword(title) {
-    if (!title || !blockedKeywords.length) return false;
+  function escapeRegExp(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function compileKeywordRegexes() {
+    blockedKeywordRegexes = [];
     for (var i = 0; i < blockedKeywords.length; i++) {
-      var kw = blockedKeywords[i];
-      if (!kw) continue;
-      var escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      var re = new RegExp("\\b" + escaped + "\\b", "i");
-      if (re.test(title)) return true;
+      if (!blockedKeywords[i]) continue;
+      blockedKeywordRegexes.push(new RegExp("\\b" + escapeRegExp(blockedKeywords[i]) + "\\b", "i"));
+    }
+  }
+
+  function matchesKeyword(title) {
+    if (!title || !blockedKeywordRegexes.length) return false;
+    for (var i = 0; i < blockedKeywordRegexes.length; i++) {
+      if (blockedKeywordRegexes[i].test(title)) return true;
     }
     return false;
   }
@@ -57,9 +67,9 @@
   function shouldHide(el) {
     var info = extractChannelInfo(el);
     if (info && isBlocked(info.id, info.name)) return true;
+    if (!blockedKeywordRegexes.length) return false;
     var title = extractTitle(el);
-    if (matchesKeyword(title)) return true;
-    return false;
+    return matchesKeyword(title);
   }
 
   function extractChannelInfo(el) {
@@ -82,13 +92,17 @@
   }
 
   function hideVideo(el) {
+    if (el.hasAttribute("omit-blocked")) return;
     el.style.display = "none";
     el.setAttribute("omit-blocked", "");
+    hiddenCount++;
   }
 
   function showVideo(el) {
+    if (!el.hasAttribute("omit-blocked")) return;
     el.style.display = "";
     el.removeAttribute("omit-blocked");
+    hiddenCount--;
   }
 
   function isBlocked(id, name) {
@@ -98,9 +112,8 @@
   }
 
   function updateBadge() {
-    var hidden = document.querySelectorAll("[omit-blocked]").length;
     try {
-      chrome.runtime.sendMessage({ type: "SET_BADGE", count: hidden });
+      chrome.runtime.sendMessage({ type: "SET_BADGE", count: hiddenCount });
     } catch (e) {
       /* background may be inactive */
     }
@@ -443,6 +456,7 @@
       var result = await chrome.storage.local.get(["blockedChannels", "blockedKeywords"]);
       var channels = result.blockedChannels || [];
       blockedKeywords = result.blockedKeywords || [];
+      compileKeywordRegexes();
       loadSets(channels);
       scanVideos(true);
       fullRefresh();
@@ -515,6 +529,7 @@
     }
     if (changes.blockedKeywords) {
       blockedKeywords = changes.blockedKeywords.newValue || [];
+      compileKeywordRegexes();
       needsScan = true;
     }
     if (needsScan) {
