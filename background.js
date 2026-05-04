@@ -53,12 +53,4 @@ chrome.contextMenus.onClicked.addListener(function (info, tab) {
   });
 });
 
-chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
-  if (msg.type === 'SET_BADGE' && sender.tab) {
-    var text = msg.count > 0 ? String(msg.count) : '';
-    chrome.action.setBadgeText({ text: text, tabId: sender.tab.id }).catch(function () {});
-    chrome.action.setBadgeBackgroundColor({ color: '#7c5cfc', tabId: sender.tab.id }).catch(function () {});
-  }
-});
-
 console.log("[Omit] Extension installed");

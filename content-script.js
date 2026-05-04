@@ -21,7 +21,6 @@
   var blockedNames = new Set();
   var blockedKeywords = [];
   var blockedKeywordRegexes = [];
-  var hiddenCount = 0;
   var channelNameMap = {};
   var overlayShown = false;
   var toastTimer = null;
@@ -95,28 +94,18 @@
     if (el.hasAttribute("omit-blocked")) return;
     el.style.display = "none";
     el.setAttribute("omit-blocked", "");
-    hiddenCount++;
   }
 
   function showVideo(el) {
     if (!el.hasAttribute("omit-blocked")) return;
     el.style.display = "";
     el.removeAttribute("omit-blocked");
-    hiddenCount--;
   }
 
   function isBlocked(id, name) {
     if (blockedIds.has(id)) return true;
     if (name && blockedNames.has(name.toLowerCase())) return true;
     return false;
-  }
-
-  function updateBadge() {
-    try {
-      chrome.runtime.sendMessage({ type: "SET_BADGE", count: hiddenCount });
-    } catch (e) {
-      /* background may be inactive */
-    }
   }
 
   function scanVideos(reset) {
@@ -134,7 +123,6 @@
         /* element may be torn down */
       }
     });
-    updateBadge();
   }
 
   function injectStyles() {
@@ -499,7 +487,6 @@
         checkNode(nodes[j]);
       }
     }
-    updateBadge();
   }
 
   var buttonDebounce = null;
