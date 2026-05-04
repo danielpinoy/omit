@@ -45,7 +45,11 @@
   function matchesKeyword(title) {
     if (!title || !blockedKeywords.length) return false;
     for (var i = 0; i < blockedKeywords.length; i++) {
-      if (blockedKeywords[i] && title.indexOf(blockedKeywords[i]) !== -1) return true;
+      var kw = blockedKeywords[i];
+      if (!kw) continue;
+      var escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      var re = new RegExp("\\b" + escaped + "\\b", "i");
+      if (re.test(title)) return true;
     }
     return false;
   }
