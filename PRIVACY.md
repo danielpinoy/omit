@@ -32,13 +32,14 @@ All processing happens locally within the extension running in your browser.
 ## Data Retention
 
 Your blocklist persists until you:
+
 - Remove channels individually via the extension popup
 - Uninstall the extension
 - Clear Chrome Sync data
 
 ## Contact
 
-For questions or concerns about this privacy policy, open an issue on the [Omit GitHub repository](https://github.com/your-username/omit/issues).
+For questions or concerns about this privacy policy, open an issue on the [Omit GitHub repository](https://github.com/danielpinoy/omit/issues).
 
 ## Changes
 

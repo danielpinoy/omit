@@ -68,7 +68,8 @@
           '<span class="channel-name">' + escapeHtml(ch.name) + '</span>' +
           '<span class="channel-id">' + escapeHtml(ch.id || '') + '</span>' +
         '</div>' +
-        '<button class="remove-btn" data-id="' + escapeHtml(ch.id) + '" title="Unblock">&times;</button>';
+        '<button class="remove-btn" title="Unblock">&times;</button>';
+      li.querySelector('.remove-btn').setAttribute('data-id', ch.id);
       listEl.appendChild(li);
     });
   }

@@ -204,7 +204,7 @@
     toast.classList.add('omit-toast-out');
     toast.addEventListener('animationend', function () {
       if (toast.parentNode) toast.remove();
-    });
+    }, { once: true });
   }
 
   function escapeText(str) {
@@ -284,7 +284,7 @@
     overlay.classList.remove('omit-overlay-visible');
     overlay.addEventListener('transitionend', function () {
       if (overlay.parentNode) overlay.remove();
-    });
+    }, { once: true });
   }
 
   function checkChannelPage() {
@@ -334,13 +334,6 @@
         scanVideos(false);
         injectBlockButtons();
       }, 200);
-    });
-
-    OBSERVER_TARGETS.forEach(function (sel) {
-      var el = document.querySelector(sel);
-      if (el) {
-        observer.observe(el, { childList: true, subtree: true });
-      }
     });
 
     if (document.body) {
