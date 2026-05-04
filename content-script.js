@@ -60,6 +60,7 @@
     var hidden = document.querySelectorAll('[omit-blocked]').length;
     try {
       chrome.runtime.sendMessage({ type: 'SET_BADGE', count: hidden });
+      chrome.storage.local.set({ pageHiddenCount: hidden });
     } catch (e) { /* background may be inactive */ }
   }
 
@@ -219,6 +220,7 @@
       var channels = (result.blockedChannels || []).filter(function (c) { return c.id !== id; });
       await chrome.storage.sync.set({ blockedChannels: channels });
     } catch (err) {
+      if (err && String(err.message || err).indexOf('Extension context invalidated') !== -1) return;
       console.error('[Omit] Undo failed:', err);
     }
   }
@@ -238,8 +240,22 @@
       }
       showToast(name, id);
     } catch (err) {
+      if (err && String(err.message || err).indexOf('Extension context invalidated') !== -1) {
+        showExtensionReloadToast(name);
+        return;
+      }
       console.error('[Omit] Failed to block channel:', err);
     }
+  }
+
+  function showExtensionReloadToast(channelName) {
+    dismissToast();
+    var toast = document.createElement('div');
+    toast.className = 'omit-toast';
+    toast.innerHTML =
+      '<span>Extension was updated. Refresh the page to block ' + escapeText(channelName) + '</span>';
+    document.body.appendChild(toast);
+    toastTimer = setTimeout(function () { dismissToast(); }, 5000);
   }
 
   function showOverlay() {
@@ -351,12 +367,16 @@
     }
   });
 
-  chrome.runtime.onMessage.addListener(function (msg) {
+  chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     if (msg.type === 'BLOCKLIST_UPDATED') {
       loadSets(msg.channels || []);
       scanVideos(true);
       fullRefresh();
       checkChannelPage();
+    }
+    if (msg.type === 'GET_STATS') {
+      var hidden = document.querySelectorAll('[omit-blocked]').length;
+      sendResponse({ count: hidden });
     }
   });
 

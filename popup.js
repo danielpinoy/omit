@@ -18,6 +18,7 @@
   var importCancelBtn = document.getElementById('import-cancel-btn');
   var importErrEl = document.getElementById('import-error');
   var retryBtn = document.getElementById('retry-btn');
+  var pageStatsEl = document.getElementById('page-stats');
 
   var cachedChannels = [];
 
@@ -80,9 +81,22 @@
       var result = await chrome.storage.sync.get(['blockedChannels']);
       cachedChannels = result.blockedChannels || [];
       renderList(cachedChannels);
+      loadStats();
     } catch (err) {
       showError();
       console.error('[Omit] Popup load error:', err);
+    }
+  }
+
+  async function loadStats() {
+    try {
+      var data = await chrome.storage.local.get(['pageHiddenCount']);
+      if (data.pageHiddenCount > 0) {
+        pageStatsEl.textContent = data.pageHiddenCount + ' videos hidden on this page';
+        pageStatsEl.style.display = '';
+      }
+    } catch (e) {
+      pageStatsEl.style.display = 'none';
     }
   }
 

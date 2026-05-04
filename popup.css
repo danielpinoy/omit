@@ -39,6 +39,14 @@ body {
   color: #777;
 }
 
+.page-stats {
+  text-align: center;
+  font-size: 11px;
+  color: #4ade80;
+  margin-bottom: 10px;
+  margin-top: -8px;
+}
+
 .add-section {
   display: flex;
   gap: 6px;
